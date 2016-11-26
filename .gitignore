@@ -1,4 +1,5 @@
 # Compiled Files
+out/
 target/
 test-output/
 *.jar
@@ -8,4 +9,3 @@ test-output/
 # IDEA files
 .idea/
 *.iml
-# this is a new line
