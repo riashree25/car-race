@@ -8,3 +8,4 @@ test-output/
 # IDEA files
 .idea/
 *.iml
+# this is a new line
