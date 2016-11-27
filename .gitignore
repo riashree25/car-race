@@ -1,9 +1,9 @@
+*.DS_STORE
+
 # Compiled Files
 out/
 target/
-test-output/
 *.jar
-*.war
 *.class
 
 # IDEA files

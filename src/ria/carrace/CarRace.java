@@ -13,9 +13,9 @@ public class CarRace extends Applet implements KeyListener, Runnable {
     private long            score          = 0;
     private int             level          = 1;
     private boolean         loop           = true;
-    private final Dimension dim            = new Dimension(500, 500);
+    private final Dimension dim            = new Dimension(800, 800);
 
-    private final Car[]     enemies        = new Car[20];
+    private final Car[]     enemies        = new Car[15];
     private final Car[]     coins          = new Car[10];
     private final Random    random         = new Random();
 
@@ -32,22 +32,24 @@ public class CarRace extends Applet implements KeyListener, Runnable {
 
         prepareResource();
         setBackground(Color.blue);
+        setSize(dim);
+        setName("Car Race");
         initScreen();
         add(screen);
     }
 
     private void prepareResource() {
 
-        Image imgRed = new ImageIcon(getClass().getResource("red_car.gif")).getImage();
-        Image imgGreen = new ImageIcon(getClass().getResource("green_car.gif")).getImage();
-        Image coinImage = new ImageIcon(getClass().getResource("coin.gif")).getImage();
+        Image enemyCar = new ImageIcon(getClass().getResource("enemy_car.png")).getImage();
+        Image playerCar = new ImageIcon(getClass().getResource("player_car.png")).getImage();
+        Image theCoin = new ImageIcon(getClass().getResource("coin.png")).getImage();
 
         MediaTracker mt = new MediaTracker(this);
 
         try {
-            mt.addImage(imgRed, 0);
-            mt.addImage(imgGreen, 1);
-            mt.addImage(coinImage, 2);
+            mt.addImage(enemyCar, 0);
+            mt.addImage(playerCar, 1);
+            mt.addImage(theCoin, 2);
             mt.waitForAll();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -55,14 +57,14 @@ public class CarRace extends Applet implements KeyListener, Runnable {
 
         image = createImage((int) dim.getWidth(), (int) dim.getHeight());
         gb = (Graphics2D) image.getGraphics();
-        playerCar = new Car(imgGreen, 250, 250, dim);
+        this.playerCar = new Car(playerCar, (int) dim.getWidth() / 2, (int) dim.getHeight() / 4 * 3, dim);
 
         for (int i = 0; i < coins.length; i++) {
-            coins[i] = new Car(coinImage, 0, 0);
+            coins[i] = new Car(theCoin, 0, 0);
         }
 
         for (int i = 0; i < enemies.length; i++) {
-            enemies[i] = new Car(imgRed, 0, 0);
+            enemies[i] = new Car(enemyCar, 0, 0);
         }
 
         for (int i = 0; i < enemies.length; i++) {
@@ -89,7 +91,7 @@ public class CarRace extends Applet implements KeyListener, Runnable {
             drawScreen();
 
             try {
-                Thread.sleep(50);
+                Thread.sleep(30);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -109,7 +111,6 @@ public class CarRace extends Applet implements KeyListener, Runnable {
         };
 
         screen.setSize(dim);
-
         screen.addKeyListener(this);
     }
 
@@ -137,7 +138,6 @@ public class CarRace extends Applet implements KeyListener, Runnable {
         if (playerCar.intersects(car)) {
 
             noOfCollisions++;
-            score -= 50;
 
             if (playerCar.getX() > car.getX()) {
                 car.move(-20, 0);
@@ -170,8 +170,10 @@ public class CarRace extends Applet implements KeyListener, Runnable {
         drawRoad();
 
         for (int i = 0; i < enemies.length; i++) {
-            enemies[i].move(0, 20 * level);
+            int dy = (level == 1) ? 20 : (level == 2) ? 35 : 50;
+            enemies[i].move(0, dy);
             enemies[i].draw(gb, screen);
+
             if (enemies[i].getY() > dim.getHeight()) {
                 setObject(enemies, i);
             }
@@ -179,8 +181,9 @@ public class CarRace extends Applet implements KeyListener, Runnable {
         }
 
         for (int i = 0; i < coins.length; i++) {
-            coins[i].move(0, 15);
+            coins[i].move(0, 20);
             coins[i].draw(gb, screen);
+
             if (coins[i].getY() > dim.getHeight()) {
                 setObject(coins, i);
             }
@@ -190,39 +193,35 @@ public class CarRace extends Applet implements KeyListener, Runnable {
         playerCar.draw(gb, screen);
         gs.drawImage(image, 0, 0, screen);
 
-        Font font = new Font("Helvetica", Font.BOLD, 20);
-        gs.setColor(Color.black);
+        Font font = new Font("cambria", Font.BOLD, 25);
+        gs.setColor(Color.RED);
         gs.setFont(font);
 
-        if ((score > 500 && score < 600)) {
-            gs.drawString("LEVEL 1 COMPLETE !!", 250, 100);
-        } else if ((score > 1000) && (score < 1100)) {
-            gs.drawString("LEVEL 2 COMPLETE !!", 250, 100);
-        } else {
-            gs.drawString("", 250, 100);
-        }
-
         if (!loop) {
-            gs.drawString("GAME OVER !!", 110, 50);
+            gs.drawString("GAME OVER !!", 300, 300);
         }
     }
 
     private void drawRoad() {
 
-        if (score < 500) {
+        if (score < 1000) {
             level = 1;
-        } else if (score < 1000) {
+            road += 20;
+        } else if (score < 2000) {
             level = 2;
-        } else if (score < 1500) {
+            road += 35;
+        } else if (score < 3000) {
             level = 3;
+            road += 50;
         }
-        road += level * 20;
 
         gb.setPaint(Color.yellow);
         gb.fillRect((int) dim.getWidth() / 2, road, 20, 150);
         gb.setFont(new Font("cambria", Font.BOLD, 25));
         gb.setColor(Color.RED);
-        gb.drawString(Long.toString(score), 50, 50);
+
+        String msg = "Score - " + score + ", Level = " + level + ", Lives - " + (10 - noOfCollisions);
+        gb.drawString(msg, 25, 25);
 
         if (road >= dim.getHeight()) {
             road = -150;
@@ -240,13 +239,13 @@ public class CarRace extends Applet implements KeyListener, Runnable {
             screen.requestFocus();
             init();
         } else if (keyEvent.getKeyCode() == KeyEvent.VK_LEFT) {
-            playerCar.move(-30, 0);
+            playerCar.move(-50, 0);
         } else if (keyEvent.getKeyCode() == KeyEvent.VK_RIGHT) {
-            playerCar.move(30, 0);
+            playerCar.move(50, 0);
         } else if (keyEvent.getKeyCode() == KeyEvent.VK_UP) {
-            playerCar.move(0, -30);
+            playerCar.move(0, -50);
         } else if (keyEvent.getKeyCode() == KeyEvent.VK_DOWN) {
-            playerCar.move(0, 30);
+            playerCar.move(0, 50);
         }
     }
 
