@@ -7,24 +7,21 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.Random;
 
-/**
- * @author Ria Shree
- */
 public class CarRace extends Applet implements KeyListener, Runnable {
 
     private int             noOfCollisions = 0;
-    private int             level          = 1;
     private long            score          = 0;
+    private int             level          = 1;
     private boolean         loop           = true;
-    private final Dimension dim            = new Dimension(500, 600);
+    private final Dimension dim            = new Dimension(500, 500);
 
     private final Car[]     enemies        = new Car[20];
     private final Car[]     coins          = new Car[10];
-    private final Random    rnd            = new Random();
+    private final Random    random         = new Random();
 
     private int             road;
     private Car             playerCar;
-    private Image           buff;
+    private Image           image;
     private Canvas          screen;
     private Thread          game;
     private Graphics2D      gs;
@@ -37,63 +34,41 @@ public class CarRace extends Applet implements KeyListener, Runnable {
         setBackground(Color.blue);
         initScreen();
         add(screen);
-
-        Button start = new Button("START");
-        add(start);
-
-        Button restart = new Button("RESTART");
-        add(restart);
-
-        start.addActionListener(actionListener -> {
-
-            screen.requestFocus();
-            game.start();
-        });
-
-        restart.addActionListener(actionListener -> {
-
-            stop();
-            screen.requestFocus();
-            init();
-        });
     }
 
     private void prepareResource() {
 
         Image imgRed = new ImageIcon(getClass().getResource("red_car.gif")).getImage();
-        Image imgBlue = new ImageIcon(getClass().getResource("blue_car.gif")).getImage();
         Image imgGreen = new ImageIcon(getClass().getResource("green_car.gif")).getImage();
-        Image coin_image = new ImageIcon(getClass().getResource("coin.gif")).getImage();
+        Image coinImage = new ImageIcon(getClass().getResource("coin.gif")).getImage();
 
         MediaTracker mt = new MediaTracker(this);
 
         try {
             mt.addImage(imgRed, 0);
-            mt.addImage(imgBlue, 1);
-            mt.addImage(imgGreen, 2);
-            mt.addImage(coin_image, 3);
+            mt.addImage(imgGreen, 1);
+            mt.addImage(coinImage, 2);
             mt.waitForAll();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
-        buff = createImage((int) dim.getWidth(), (int) dim.getHeight());
-        gb = (Graphics2D) buff.getGraphics();
-        playerCar = new Car(imgRed, 250, 250, dim);
+        image = createImage((int) dim.getWidth(), (int) dim.getHeight());
+        gb = (Graphics2D) image.getGraphics();
+        playerCar = new Car(imgGreen, 250, 250, dim);
 
         for (int i = 0; i < coins.length; i++) {
-            coins[i] = new Car(coin_image, 0, 0);
+            coins[i] = new Car(coinImage, 0, 0);
         }
-        for (int i = 0; i < 10; i++) {
-            enemies[i] = new Car(imgBlue, 0, 0);
-        }
-        for (int i = 10; i < enemies.length; i++) {
-            enemies[i] = new Car(imgGreen, 0, 0);
+
+        for (int i = 0; i < enemies.length; i++) {
+            enemies[i] = new Car(imgRed, 0, 0);
         }
 
         for (int i = 0; i < enemies.length; i++) {
             setObject(enemies, i);
         }
+
         for (int i = 0; i < coins.length; i++) {
             setObject(coins, i);
         }
@@ -114,7 +89,7 @@ public class CarRace extends Applet implements KeyListener, Runnable {
             drawScreen();
 
             try {
-                Thread.sleep(40);
+                Thread.sleep(50);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -134,54 +109,55 @@ public class CarRace extends Applet implements KeyListener, Runnable {
         };
 
         screen.setSize(dim);
+
         screen.addKeyListener(this);
     }
 
-    private void setObject(Car[] object, int en) {
+    private void setObject(Car[] object, int index) {
 
         int x, y;
         next: while (true) {
 
-            x = rnd.nextInt((int) dim.getWidth() - object[en].getWidth());
-            y = -rnd.nextInt(5000) - 200;
+            x = random.nextInt((int) dim.getWidth() - object[index].getWidth());
+            y = -random.nextInt(5000) - 200;
 
             for (int j = 0; j < object.length; j++) {
-                if (j != en && object[j].intersects(x, y)) {
+                if (j != index && object[j].intersects(x, y)) {
                     continue next;
                 }
             }
 
-            object[en].setLocation(x, y);
+            object[index].setLocation(x, y);
             break;
         }
     }
 
-    private void check(Car en) {
+    private void checkCarCollision(Car car) {
 
-        if (playerCar.intersects(en)) {
+        if (playerCar.intersects(car)) {
 
             noOfCollisions++;
             score -= 50;
 
-            if (playerCar.getX() > en.getX()) {
-                en.move(-20, 0);
+            if (playerCar.getX() > car.getX()) {
+                car.move(-20, 0);
                 playerCar.move(20, 0);
             } else {
-                en.move(20, 0);
+                car.move(20, 0);
                 playerCar.move(-20, 0);
             }
+
             if (noOfCollisions >= 10) {
                 stop();
             }
         }
     }
 
-    private void checkCoin(Car en) {
+    private void checkCoinIntersection(Car coin) {
 
-        if (playerCar.intersects(en)) {
-            noOfCollisions++;
+        if (playerCar.intersects(coin)) {
             score += 50;
-            en.setLocation(0, 0);
+            coin.setLocation(0, 0);
         }
     }
 
@@ -199,7 +175,7 @@ public class CarRace extends Applet implements KeyListener, Runnable {
             if (enemies[i].getY() > dim.getHeight()) {
                 setObject(enemies, i);
             }
-            check(enemies[i]);
+            checkCarCollision(enemies[i]);
         }
 
         for (int i = 0; i < coins.length; i++) {
@@ -208,57 +184,37 @@ public class CarRace extends Applet implements KeyListener, Runnable {
             if (coins[i].getY() > dim.getHeight()) {
                 setObject(coins, i);
             }
-            checkCoin(coins[i]);
+            checkCoinIntersection(coins[i]);
         }
 
         playerCar.draw(gb, screen);
-        gs.drawImage(buff, 0, 0, screen);
+        gs.drawImage(image, 0, 0, screen);
+
+        Font font = new Font("Helvetica", Font.BOLD, 20);
+        gs.setColor(Color.black);
+        gs.setFont(font);
 
         if ((score > 500 && score < 600)) {
-
-            String b = "LEVEL 1 COMPLETE !!";
-            gs.setColor(Color.black);
-
-            Font small = new Font("Helvetica", Font.BOLD, 20);
-
-            gs.setFont(small);
-            gs.drawString(b, 250, 100);
+            gs.drawString("LEVEL 1 COMPLETE !!", 250, 100);
         } else if ((score > 1000) && (score < 1100)) {
-
-            String b = "LEVEL 2 COMPLETE !!";
-            gs.setColor(Color.black);
-
-            Font small = new Font("Helvetica", Font.BOLD, 20);
-
-            gs.setFont(small);
-            gs.drawString(b, 250, 100);
+            gs.drawString("LEVEL 2 COMPLETE !!", 250, 100);
         } else {
-
-            String b = "";
-            gs.setColor(Color.black);
-
-            Font small = new Font("Helvetica", Font.BOLD, 20);
-
-            gs.setFont(small);
-            gs.drawString(b, 250, 100);
+            gs.drawString("", 250, 100);
         }
 
         if (!loop) {
-
-            String a = "GAME OVER !!";
-            gs.setColor(Color.black);
-
-            Font small = new Font("Helvetica", Font.BOLD, 20);
-
-            gs.setFont(small);
-            gs.drawString(a, 110, 50);
+            gs.drawString("GAME OVER !!", 110, 50);
         }
     }
 
     private void drawRoad() {
 
-        if (score == (500 * level)) {
-            level++;
+        if (score < 500) {
+            level = 1;
+        } else if (score < 1000) {
+            level = 2;
+        } else if (score < 1500) {
+            level = 3;
         }
         road += level * 20;
 
@@ -274,22 +230,29 @@ public class CarRace extends Applet implements KeyListener, Runnable {
     }
 
     @Override
-    public void keyPressed(KeyEvent ke) {
+    public void keyPressed(KeyEvent keyEvent) {
 
-        if (ke.getKeyCode() == KeyEvent.VK_LEFT) {
-            playerCar.move(-20, 0);
-        } else if (ke.getKeyCode() == KeyEvent.VK_RIGHT) {
-            playerCar.move(20, 0);
-        } else if (ke.getKeyCode() == KeyEvent.VK_UP) {
-            playerCar.move(0, -20);
-        } else if (ke.getKeyCode() == KeyEvent.VK_DOWN) {
-            playerCar.move(0, 20);
+        if (keyEvent.getKeyCode() == KeyEvent.VK_SPACE) {
+            screen.requestFocus();
+            game.start();
+        } else if (keyEvent.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+            stop();
+            screen.requestFocus();
+            init();
+        } else if (keyEvent.getKeyCode() == KeyEvent.VK_LEFT) {
+            playerCar.move(-30, 0);
+        } else if (keyEvent.getKeyCode() == KeyEvent.VK_RIGHT) {
+            playerCar.move(30, 0);
+        } else if (keyEvent.getKeyCode() == KeyEvent.VK_UP) {
+            playerCar.move(0, -30);
+        } else if (keyEvent.getKeyCode() == KeyEvent.VK_DOWN) {
+            playerCar.move(0, 30);
         }
     }
 
     @Override
-    public void keyReleased(KeyEvent ke) {}
+    public void keyTyped(KeyEvent e) {}
 
     @Override
-    public void keyTyped(KeyEvent ke) {}
+    public void keyReleased(KeyEvent e) {}
 }

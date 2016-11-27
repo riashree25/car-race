@@ -4,14 +4,11 @@ import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.ImageObserver;
 
-/**
- * @author Ria Shree
- */
 class Car {
 
     private int       x;
     private int       y;
-    private final Image     img;
+    private Image     img;
     private Dimension dim;
 
     Car(Image img, int x, int y) {
@@ -25,10 +22,6 @@ class Car {
 
         this(img, x, y);
         this.dim = dim;
-    }
-
-    void draw(Graphics g, ImageObserver observer) {
-        g.drawImage(img, x, y, observer);
     }
 
     int getX() {
@@ -48,12 +41,12 @@ class Car {
         return img.getWidth(null);
     }
 
-    private int getHeight() {
+    int getHeight() {
         return img.getHeight(null);
     }
 
-    private Rectangle2D getRectangle() {
-        return new Rectangle2D.Float(x, y, getWidth(), getHeight());
+    void draw(Graphics g, ImageObserver observer) {
+        g.drawImage(img, x, y, observer);
     }
 
     void move(int dx, int dy) {
@@ -71,6 +64,10 @@ class Car {
                 x = (int) dim.getWidth() - getWidth();
             }
         }
+    }
+
+    Rectangle2D getRectangle() {
+        return new Rectangle2D.Float(x, y, getWidth(), getHeight());
     }
 
     boolean intersects(Car car) {
